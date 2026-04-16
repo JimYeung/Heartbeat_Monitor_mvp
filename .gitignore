@@ -1,0 +1,28 @@
+# .NET build outputs
+bin/
+obj/
+publish/
+*.user
+*.suo
+.vs/
+
+# STM32CubeIDE build outputs
+stm/**/Debug/
+stm/**/Release/
+stm/**/*.d
+stm/**/*.o
+stm/**/*.elf
+stm/**/*.map
+stm/**/*.lst
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / local config
+*.env
+*.local
+
+# Claude memory
+.claude/
+.metadata/
