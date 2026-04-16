@@ -70,6 +70,7 @@ Example UI Layout
 | 2–3  | Sequence    | `uint16` | Little-endian packet counter (wraps at 65535) |
 | 4–5  | Value       | `int16`  | Little-endian ADC sample, zero-centred   |
 | 6–7  | CRC*        | `uint16` | CRC-16 CCITT over bytes 2–5             |
+
 *Cyclic Redundancy Check
 
 ### Sample Rate & Buffer
