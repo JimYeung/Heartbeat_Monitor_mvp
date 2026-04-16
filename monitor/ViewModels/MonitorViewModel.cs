@@ -59,9 +59,7 @@ public sealed partial class MonitorViewModel : ObservableObject
     private CancellationTokenSource? _cts;
     private readonly SignalProcessor _processor = new();
 
-    // -----------------------------------------------------------------------
     // Connect
-    // -----------------------------------------------------------------------
 
     [RelayCommand(CanExecute = nameof(CanConnect))]
     private async Task ConnectAsync()
@@ -95,10 +93,7 @@ public sealed partial class MonitorViewModel : ObservableObject
 
     private bool CanConnect() => !IsConnected;
 
-    // -----------------------------------------------------------------------
     // Disconnect
-    // -----------------------------------------------------------------------
-
     [RelayCommand(CanExecute = nameof(CanDisconnect))]
     private void Disconnect()
     {
@@ -115,11 +110,8 @@ public sealed partial class MonitorViewModel : ObservableObject
 
     private bool CanDisconnect() => IsConnected;
 
-    // -----------------------------------------------------------------------
     // Pause toggle — freezes the display; data keeps flowing through the
     // processor so BPM stays live and the channel never backs up
-    // -----------------------------------------------------------------------
-
     [RelayCommand]
     private void TogglePause()
     {
@@ -162,9 +154,8 @@ public sealed partial class MonitorViewModel : ObservableObject
         StatusText = $"Saved → {path}";
     }
 
-    // -----------------------------------------------------------------------
+
     // Buffer drain — called by the View's 60 Hz DispatcherTimer on the UI thread
-    // -----------------------------------------------------------------------
 
     /// <summary>
     /// Drains all available samples from the channel, runs the signal processor,
@@ -201,14 +192,14 @@ public sealed partial class MonitorViewModel : ObservableObject
 
         if (any)
         {
-            // Update BPM display (SR-06)
+            // Update BPM display
             double bpm = _processor.CurrentBpm;
             BpmText = bpm > 0 ? $"{bpm:F0}" : "--";
 
-            // BPM alarm (SR-07)
+            // BPM alarm
             IsBpmAlarm = bpm > 0 && (bpm < BpmMin || bpm > BpmMax);
 
-            // Dropped packet counter (SR-08)
+            // Dropped packet counter
             DroppedText = $"Dropped: {_device.DroppedPackets}";
         }
 

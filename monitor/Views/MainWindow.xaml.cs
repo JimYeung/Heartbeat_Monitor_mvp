@@ -114,12 +114,12 @@ public partial class MainWindow : Window
         var png  = Path.Combine(dir, stem + ".png");
         var csv  = Path.Combine(dir, stem + ".csv");
 
-        // --- Plot image ---
+        // Plot image
         int w = Math.Max((int)WpfPlot.ActualWidth,  1024);
         int h = Math.Max((int)WpfPlot.ActualHeight, 768);
         WpfPlot.Plot.SavePng(png, w, h);
 
-        // --- CSV ---
+        // CSV
         using var writer = new StreamWriter(csv);
         writer.WriteLine($"# Snapshot datetime: {now:O}");
         writer.WriteLine($"# Sample rate: 250 Hz");
