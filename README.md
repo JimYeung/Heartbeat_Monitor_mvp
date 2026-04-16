@@ -55,7 +55,7 @@ Real-time acquisition, transmission, display, and analysis of a heartbeat signal
 
 ### UI Layout
 Example UI Layout
-<img src="docs/images/screenshot.png" width="800"/>
+<img src="docs/images/example_ui.png" width="800"/>
 
 ---
 
