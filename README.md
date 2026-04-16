@@ -95,8 +95,6 @@ BPM is computed as a rolling average over the last 5 RR intervals:
 BPM = 60 × 250 / mean(RR_samples)
 ```
 
-See [docs/signal_processing.md](docs/signal_processing.md) for the full derivation.
-
 ---
 
 ## Project Structure
