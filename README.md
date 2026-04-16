@@ -2,13 +2,13 @@
 
 ## Introduction
 
-This project demonstrates a heartbeat monitor UI using a simulated ECG signal source. The signal source is either firmware running on an STM32 Nucleo-F767ZI board, or an internal software simulator built into the application for use when the dev board is not available. The desktop application is a WPF app running on Windows.
+This project demonstrates a heartbeat monitor UI using a simulated ECG signal source. The signal source is either firmware running on an STM32 Nucleo-F767ZI board, or an internal software simulator built into the application for use when the dev board is not available. The desktop application is a WPF app running on Windows. This application includes codes generated from agentic tools. 
 
 ---
 
 ## Scope
 
-Real-time acquisition, transmission, display, and analysis of a heartbeat signal for demonstration purposes. **Not for clinical use.**
+Real-time acquisition, transmission, display, and analysis of a heartbeat signal for demonstration purposes.
 
 ### Design Goals
 
@@ -20,7 +20,7 @@ Real-time acquisition, transmission, display, and analysis of a heartbeat signal
 
 ## Assumptions
 
-- Signal sources transmit samples in 8-byte packets as defined in [PROTOCOL.md](PROTOCOL.md).
+- Signal sources transmit samples in 8-byte packets. 
 - Sample rate is 250 Hz.
 - ADC values are zero-centred int16 (range approximately −2000 to +2000).
 
@@ -34,18 +34,18 @@ Real-time acquisition, transmission, display, and analysis of a heartbeat signal
 ┌─────────────────────────────┐        ┌──────────────────────────────────┐
 │   Signal Source             │        │   WPF Monitor Application        │
 │                             │        │                                  │
-│  STM32 Nucleo-F767ZI        │──USB──▶│  TcpDeviceService                │
+│  STM32 Nucleo-F767ZI        │──USB──>│  TcpDeviceService                │
 │  (USART3 @ 115200 baud)     │  VCP   │                                  │
-│                             │        │  ──── or ────                    │
-│  ── or ──                   │        │                                  │
+│                             │        │───────────────OR─────────────────│
+│────────────OR───────────────│        │                                  │
 │                             │        │  SimulatorDeviceService          │
-│  Software Simulator         │─────▶  │  (internal, no hardware needed)  │
+│  Software Simulator         │  ───>  │  (internal, no hardware needed)  │
 └─────────────────────────────┘        │                                  │
                                        │  Channel<Sample>  (thread-safe)  │
                                        │         │                        │
                                        │         ▼  (60 Hz UI timer)      │
                                        │  SignalProcessor                 │
-                                       │  (bandpass filter + BPM)        │
+                                       │  (bandpass filter + BPM cal.)    │
                                        │         │                        │
                                        │         ▼                        │
                                        │  WaveformBuffer / FilteredBuffer │
@@ -54,24 +54,8 @@ Real-time acquisition, transmission, display, and analysis of a heartbeat signal
 ```
 
 ### UI Layout
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  CONNECTIVITY                      │  DISPLAY                    │
-│  Host  Port  Connect  Disconnect   │  Reset View  Snapshot       │
-│  ● Status            [x] Simulator │  Record  Pause              │
-│                                    │  Saved: ecg_snapshot_...    │
-├─────────────────────────────────────────────────┬────────────────┤
-│                                                 │  HEART RATE    │
-│                ECG Waveform — Live              │                │
-│                                                 │     72 BPM     │
-│   [Raw ✓]  [Filtered ✓]  (overlay top-right)   │                │
-│                                                 │  NORMAL RANGE  │
-│   [hover tooltip — sample index + values]       │  Min  Max      │
-├─────────────────────────────────────────────────┴────────────────┤
-│  250 Hz  |  8-byte packets  |  CRC-16 CCITT       Dropped: 0     │
-└──────────────────────────────────────────────────────────────────┘
-```
+Example UI Layout
+<img src="docs/images/screenshot.png" width="800"/>
 
 ---
 
@@ -85,13 +69,8 @@ Real-time acquisition, transmission, display, and analysis of a heartbeat signal
 | 1    | SOF2        | `uint8`  | `0x55` — start of frame byte 2           |
 | 2–3  | Sequence    | `uint16` | Little-endian packet counter (wraps at 65535) |
 | 4–5  | Value       | `int16`  | Little-endian ADC sample, zero-centred   |
-| 6–7  | CRC         | `uint16` | CRC-16 CCITT over bytes 2–5              |
-
-### CRC-16 CCITT
-
-- Initial value: `0xFFFF`
-- Polynomial: `0x1021`
-- Computed over the 4-byte payload (sequence + value) before appending to the packet.
+| 6–7  | CRC*        | `uint16` | CRC-16 CCITT over bytes 2–5             |
+*Cyclic Redundancy Check
 
 ### Sample Rate & Buffer
 
@@ -139,6 +118,24 @@ heartbeat_monitor/
 │   └── PROTOCOL.md           Packet protocol specification
 └── PROTOCOL.md               (root copy)
 ```
+---
+## Technical Deicision
+
+### Fixed-size pre-allocated buffers
+Rolling display buffers (`double[1250]`) are allocated once at startup and mutated
+in-place using `Array.Copy`. This avoids GC pressure on the UI thread at 250 Hz and
+keeps render latency predictable.
+
+### Channel<T> as the thread boundary
+`System.Threading.Channels.Channel<Sample>` acts as an interface between the producer 
+(TCP/simulator) and the consumer (UI thread). The data is produced and consumed at the
+same rate (250Hz) without the need of locking. 
+
+### Polling render loop over data-change notifications
+Instead of rendering the entire plot 250Hz, which would be expensive, the plot is rendered 
+at a slower rate (60Hz), i.e. re-render the plot every ~4 samples, which is the standard 
+refresh rate for human eyes. Hence,`DispatcherTimer` is used to govern the refreshing rate
+per tick instead of using `INotifyPropertyChanged` (MVVP) which refresh on every sample. 
 
 ---
 
